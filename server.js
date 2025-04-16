@@ -8,32 +8,14 @@ const PORT = process.env.PORT || 3300;
 const mongoose = require('mongoose');
 const session = require('express-session');
 const flash = require('express-flash');
-const MongoDbStore = require('connect-mongo'); // Correctly import connect-mongo
+const MongoDbStore = require('connect-mongo'); 
 const passport = require('passport');
 const Emitter = require('events');
 
 // Database connection
 const connectDB = require('./app/config/db');
 const uri = process.env.MONGO_CONNECTION_URL;
-
-const connectWithRetry = () => {
-    mongoose.connect(uri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-        serverSelectionTimeoutMS: 30000,  // 30 seconds timeout for server selection
-        socketTimeoutMS: 45000,  // 45 seconds socket timeout
-    })
-    .then(() => {
-        console.log("MongoDB connected successfully!");
-    })
-    .catch((err) => {
-        console.log('MongoDB connection error:', err);
-        setTimeout(connectWithRetry, 5000); // Retry after 5 seconds if the connection fails
-    });
-};
-
-// Call the connection function
-connectWithRetry();
+connectDB(uri);
 
 // Session store
 let mongoStore = new MongoDbStore({
@@ -47,7 +29,7 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     store: mongoStore,
-    cookie: { maxAge: 1000 * 60 * 60 * 24 } // 24 hours
+    cookie: { maxAge: 1000 * 60 * 60 * 24 } 
 }));
 
 // Event emitter
