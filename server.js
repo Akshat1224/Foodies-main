@@ -15,7 +15,25 @@ const Emitter = require('events');
 // Database connection
 const connectDB = require('./app/config/db');
 const uri = process.env.MONGO_CONNECTION_URL;
-connectDB(uri);
+
+const connectWithRetry = () => {
+    mongoose.connect(uri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 30000,  // 30 seconds timeout for server selection
+        socketTimeoutMS: 45000,  // 45 seconds socket timeout
+    })
+    .then(() => {
+        console.log("MongoDB connected successfully!");
+    })
+    .catch((err) => {
+        console.log('MongoDB connection error:', err);
+        setTimeout(connectWithRetry, 5000); // Retry after 5 seconds if the connection fails
+    });
+};
+
+// Call the connection function
+connectWithRetry();
 
 // Session store
 let mongoStore = new MongoDbStore({
@@ -60,10 +78,12 @@ app.use(expressLayouts);
 app.set('views', path.join(__dirname, 'resources/views'));
 app.set('view engine', 'ejs');
 
+// Routes
 require('./routes/web')(app);
 
+// Start the server
 const server = app.listen(PORT, () => {
-    console.log(`listening on port ${PORT}`);
+    console.log(`Listening on port ${PORT}`);
 });
 
 // Socket
