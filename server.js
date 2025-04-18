@@ -4,23 +4,23 @@ const app = express();
 const path = require('path');
 const ejs = require('ejs');
 const expressLayouts = require('express-ejs-layouts');
-const PORT = process.env.PORT || 3300;
 const mongoose = require('mongoose');
 const session = require('express-session');
 const flash = require('express-flash');
-const MongoDbStore = require('connect-mongo'); 
+const MongoDbStore = require('connect-mongo');
 const passport = require('passport');
 const Emitter = require('events');
 
+const PORT = process.env.PORT || 3300;
+
 // Database connection
 const connectDB = require('./app/config/db');
-const uri = process.env.MONGO_CONNECTION_URL;
-connectDB(uri);
+connectDB(); // You don't need to pass the URI since it's already in .env
 
 // Session store
-let mongoStore = new MongoDbStore({
-    mongoUrl: uri, // Use your MongoDB connection URL
-    collectionName: 'sessions' // Specify the collection name
+let mongoStore = MongoDbStore.create({
+    mongoUrl: process.env.MONGO_CONNECTION_URL,
+    collectionName: 'sessions'
 });
 
 // Session config
@@ -29,7 +29,7 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     store: mongoStore,
-    cookie: { maxAge: 1000 * 60 * 60 * 24 } 
+    cookie: { maxAge: 1000 * 60 * 60 * 24 } // 24 hours
 }));
 
 // Event emitter
@@ -44,7 +44,7 @@ app.use(passport.session());
 
 app.use(flash());
 
-// Assets
+// Middleware
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
@@ -56,6 +56,7 @@ app.use((req, res, next) => {
     next();
 });
 
+// Template engine
 app.use(expressLayouts);
 app.set('views', path.join(__dirname, 'resources/views'));
 app.set('view engine', 'ejs');
@@ -64,8 +65,8 @@ app.set('view engine', 'ejs');
 require('./routes/web')(app);
 
 // Start the server
-const server = app.listen(PORT, () => {
-    console.log(`Listening on port ${PORT}`);
+const server = app.listen(PORT,'0.0.0.0', () => {
+    console.log(`✅ Listening on port ${PORT}`);
 });
 
 // Socket
